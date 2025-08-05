@@ -19,6 +19,10 @@
 #include <cstdint>
 #include <vector>
 
+#include <sstream>
+#include <iomanip>
+#include <fstream>
+
 #include "algebra/convolution.h"
 #include "algebra/fp2.h"
 #include "algebra/reed_solomon.h"
@@ -68,12 +72,33 @@ void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
 
   std::vector<uint8_t> zbuf;
   zkpr.write(zbuf, base);
+
+  log(INFO,"Saving to file");
+  std::ofstream out("zk_proof.bin", std::ios::binary);
+  out.write(reinterpret_cast<const char*>(zbuf.data()), zbuf.size());
+  out.close();
+
   log(INFO, "zkp len: %zu bytes", zbuf.size());
 
   // ======= run verifier =============
   // Re-parse the proof to simulate a different client.
   ZkProof<Field> zkpv(circuit, kLigeroRate, kLigeroNreq);
-  ReadBuffer rb(zbuf);
+
+  // Load zbuf from file
+  log(INFO,"Reading from file");
+  std::ifstream in("zk_proof.bin", std::ios::binary);
+  if (!in) {
+    log(ERROR, "Failed to open zk_proof.bin for reading");
+    return;
+  }
+
+  std::vector<uint8_t> zbuf_from_file((std::istreambuf_iterator<char>(in)),
+                                      std::istreambuf_iterator<char>());
+  in.close();
+
+  // ReadBuffer now uses the loaded data
+  ReadBuffer rb(zbuf_from_file);
+
   EXPECT_TRUE(zkpv.read(rb, base));
 
   ZkVerifier<Field, RSFactory> verifier(circuit, rsf, kLigeroRate, kLigeroNreq,

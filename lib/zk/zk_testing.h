@@ -45,22 +45,9 @@ constexpr size_t kVersion = 4;
 
 // Runs a zk prover and verifier for a field that requires a field extension
 // to perform the commitment.
-template <class Field>
-void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
-                  const Dense<Field>& pub, const Field& base,
-                  const typename Field::Elt& root_x,
-                  const typename Field::Elt& root_y, size_t root_order) {
-  // Build the relevant algebra objects.
-  using Field2 = Fp2<Field>;
-  using Elt2 = typename Field2::Elt;
-  using FftExtConvolutionFactory = FFTExtConvolutionFactory<Field, Field2>;
-  using RSFactory = ReedSolomonFactory<Field, FftExtConvolutionFactory>;
-
-  const Field2 base_2(base);
-  const Elt2 omega{root_x, root_y};
-  const FftExtConvolutionFactory fft(base, base_2, omega, root_order);
-  const RSFactory rsf(fft, base);
-
+template <class Field, class RSFactory>
+void generate_zk_proof(const Circuit<Field>& circuit, Dense<Field>& W,
+                       const Field& base, const RSFactory& rsf) {
   ZkProof<Field> zkpr(circuit, kLigeroRate, kLigeroNreq);
 
   Transcript tp((uint8_t*)"zk_test", 7, kVersion);
@@ -73,19 +60,20 @@ void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
   std::vector<uint8_t> zbuf;
   zkpr.write(zbuf, base);
 
-  log(INFO,"Saving to file");
+  log(INFO, "Saving to file");
   std::ofstream out("zk_proof.bin", std::ios::binary);
   out.write(reinterpret_cast<const char*>(zbuf.data()), zbuf.size());
   out.close();
 
   log(INFO, "zkp len: %zu bytes", zbuf.size());
+}
 
-  // ======= run verifier =============
-  // Re-parse the proof to simulate a different client.
+template <class Field, class RSFactory>
+void verify_zk_proof(const Circuit<Field>& circuit, const Dense<Field>& pub,
+                     const Field& base, const RSFactory& rsf) {
   ZkProof<Field> zkpv(circuit, kLigeroRate, kLigeroNreq);
 
-  // Load zbuf from file
-  log(INFO,"Reading from file");
+  log(INFO, "Reading from file");
   std::ifstream in("zk_proof.bin", std::ios::binary);
   if (!in) {
     log(ERROR, "Failed to open zk_proof.bin for reading");
@@ -96,9 +84,7 @@ void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
                                       std::istreambuf_iterator<char>());
   in.close();
 
-  // ReadBuffer now uses the loaded data
   ReadBuffer rb(zbuf_from_file);
-
   EXPECT_TRUE(zkpv.read(rb, base));
 
   ZkVerifier<Field, RSFactory> verifier(circuit, rsf, kLigeroRate, kLigeroNreq,
@@ -108,6 +94,26 @@ void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
   EXPECT_TRUE(verifier.verify(zkpv, pub, tv));
   log(INFO, "ZK Verify done");
 }
+
+template <class Field>
+void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
+                  const Dense<Field>& pub, const Field& base,
+                  const typename Field::Elt& root_x,
+                  const typename Field::Elt& root_y, size_t root_order) {
+  using Field2 = Fp2<Field>;
+  using Elt2 = typename Field2::Elt;
+  using FftExtConvolutionFactory = FFTExtConvolutionFactory<Field, Field2>;
+  using RSFactory = ReedSolomonFactory<Field, FftExtConvolutionFactory>;
+
+  const Field2 base_2(base);
+  const Elt2 omega{root_x, root_y};
+  const FftExtConvolutionFactory fft(base, base_2, omega, root_order);
+  const RSFactory rsf(fft, base);
+
+  generate_zk_proof<Field, RSFactory>(circuit, W, base, rsf);
+  verify_zk_proof<Field, RSFactory>(circuit, pub, base, rsf);
+}
+
 
 template <class Field>
 void run_failing_test_zk2(const Circuit<Field>& circuit, Dense<Field>& W,

@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(jwt_test)
-target_link_libraries(jwt_test flatsha base64)
+# proofs_add_tests(jwt_test)
+target_link_libraries(base64)

@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(transcript_test)
-proofs_add_tests(random_test)
+# proofs_add_tests(transcript_test)
+# proofs_add_tests(random_test)

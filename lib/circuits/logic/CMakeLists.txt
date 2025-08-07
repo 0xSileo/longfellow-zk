@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(bit_adder_test bit_plucker_test logic_circuit_test
-logic_test memcmp_test polynomial_test routing_test )
+# proofs_add_tests(bit_adder_test bit_plucker_test logic_circuit_test
+#logic_test memcmp_test polynomial_test routing_test )

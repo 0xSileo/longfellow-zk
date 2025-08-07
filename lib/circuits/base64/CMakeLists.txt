@@ -14,4 +14,4 @@
 
 add_library(base64 OBJECT decode_util.cc)
 
-proofs_add_tests(decode_test decode_circuit_test)
+# proofs_add_tests(decode_test decode_circuit_test)

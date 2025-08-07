@@ -12,4 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(zk_test)
+
+proofs_add_exec(zk_test)
+

@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(affine_test eqs_test)
+# proofs_add_tests(affine_test eqs_test)

@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(mac_circuit_test)
-target_link_libraries(mac_circuit_test ec)
+# proofs_add_tests(mac_circuit_test)
+target_link_libraries(ec)

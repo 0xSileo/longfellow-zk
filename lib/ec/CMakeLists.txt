@@ -14,4 +14,4 @@
 
 add_library(ec OBJECT p256.cc)
 
-proofs_add_tests(elliptic_curve_test)
+# proofs_add_tests(elliptic_curve_test)

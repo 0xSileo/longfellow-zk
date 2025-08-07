@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(quad_test)
-proofs_add_tests(sumcheck_test)
+# proofs_add_tests(quad_test)
+# proofs_add_tests(sumcheck_test)

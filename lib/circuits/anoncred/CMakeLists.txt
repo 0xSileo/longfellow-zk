@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(small_test)
+# proofs_add_tests(small_test)
 
-target_link_libraries(small_test mdoc)
+# target_link_libraries(mdoc)

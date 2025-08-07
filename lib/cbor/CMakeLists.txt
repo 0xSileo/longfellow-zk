@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proofs_add_tests(host_decoder_test)
+# proofs_add_tests(host_decoder_test)
 

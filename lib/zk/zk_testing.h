@@ -35,7 +35,6 @@
 #include "zk/zk_proof.h"
 #include "zk/zk_prover.h"
 #include "zk/zk_verifier.h"
-#include "gtest/gtest.h"
 
 namespace proofs {
 
@@ -54,7 +53,7 @@ void generate_zk_proof(const Circuit<Field>& circuit, Dense<Field>& W,
   SecureRandomEngine rng;
   ZkProver<Field, RSFactory> prover(circuit, base, rsf);
   prover.commit(zkpr, W, tp, rng);
-  EXPECT_TRUE(prover.prove(zkpr, W, tp));
+  assert(prover.prove(zkpr, W, tp));
   log(INFO, "ZK Prover done");
 
   std::vector<uint8_t> zbuf;
@@ -85,13 +84,13 @@ void verify_zk_proof(const Circuit<Field>& circuit, const Dense<Field>& pub,
   in.close();
 
   ReadBuffer rb(zbuf_from_file);
-  EXPECT_TRUE(zkpv.read(rb, base));
+  assert(zkpv.read(rb, base));
 
   ZkVerifier<Field, RSFactory> verifier(circuit, rsf, kLigeroRate, kLigeroNreq,
                                         base);
   Transcript tv((uint8_t*)"zk_test", 7, kVersion);
   verifier.recv_commitment(zkpv, tv);
-  EXPECT_TRUE(verifier.verify(zkpv, pub, tv));
+  assert(verifier.verify(zkpv, pub, tv));
   log(INFO, "ZK Verify done");
 }
 
@@ -112,72 +111,6 @@ void run2_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
 
   generate_zk_proof<Field, RSFactory>(circuit, W, base, rsf);
   verify_zk_proof<Field, RSFactory>(circuit, pub, base, rsf);
-}
-
-
-template <class Field>
-void run_failing_test_zk2(const Circuit<Field>& circuit, Dense<Field>& W,
-                          const Dense<Field>& pub, const Field& base,
-                          const typename Field::Elt& root_x,
-                          const typename Field::Elt& root_y,
-                          size_t root_order) {
-  // Build the relevant algebra objects.
-  using Field2 = Fp2<Field>;
-  using Elt2 = typename Field2::Elt;
-  using FftExtConvolutionFactory = FFTExtConvolutionFactory<Field, Field2>;
-  using RSFactory = ReedSolomonFactory<Field, FftExtConvolutionFactory>;
-
-  const Field2 base_2(base);
-  const Elt2 omega{root_x, root_y};
-  const FftExtConvolutionFactory fft(base, base_2, omega, root_order);
-  const RSFactory rsf(fft, base);
-
-  ZkProof<Field> zkpr(circuit, kLigeroRate, kLigeroNreq);
-
-  Transcript tp((uint8_t*)"zk_test", 7, kVersion);
-  SecureRandomEngine rng;
-  ZkProver<Field, RSFactory> prover(circuit, base, rsf);
-  prover.commit(zkpr, W, tp, rng);
-  bool p_ok = prover.prove(zkpr, W, tp);
-  EXPECT_FALSE(p_ok);
-}
-
-// Runs a zk prover and verifier for a field that has a suitable root of unity.
-template <class Field>
-void run_test_zk(const Circuit<Field>& circuit, Dense<Field>& W,
-                 const Dense<Field>& pub, const typename Field::Elt& omega,
-                 uint64_t omega_order, const Field& F) {
-  using FftConvolutionFactory = FFTConvolutionFactory<Field>;
-
-  FftConvolutionFactory fft(F, omega, omega_order);
-  using RSFactory = ReedSolomonFactory<Field, FftConvolutionFactory>;
-  const RSFactory rsf(fft, F);
-
-  ZkProof<Field> zkpr(circuit, kLigeroRate, kLigeroNreq);
-
-  Transcript tp((uint8_t*)"zk_test", 7, kVersion);
-  SecureRandomEngine rng;
-  ZkProver<Field, RSFactory> prover(circuit, F, rsf);
-  prover.commit(zkpr, W, tp, rng);
-  EXPECT_TRUE(prover.prove(zkpr, W, tp));
-
-  log(INFO, "ZK Prover done");
-
-  std::vector<uint8_t> zbuf;
-  zkpr.write(zbuf, F);
-  log(INFO, "zkp len: %zu bytes", zbuf.size());
-
-  // ======= zk verifier =============
-  // Re-parse the proof to simulate a different client.
-  ZkProof<Field> zkpv(circuit, kLigeroRate, kLigeroNreq);
-  ReadBuffer rb(zbuf);
-  EXPECT_TRUE(zkpv.read(rb, F));
-
-  ZkVerifier<Field, RSFactory> verifier(circuit, rsf, kLigeroRate, kLigeroNreq,
-                                        F);
-  Transcript tv((uint8_t*)"zk_test", 7, kVersion);
-  verifier.recv_commitment(zkpv, tv);
-  EXPECT_TRUE(verifier.verify(zkpv, pub, tv));
 }
 
 }  // namespace proofs
